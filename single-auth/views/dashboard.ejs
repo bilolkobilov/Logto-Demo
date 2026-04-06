@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= appName %> — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        :root {
+            --accent: <%= appColor %>;
+            --accent-dim: <%= appColor %>22;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="nav-dot" style="background: var(--accent)"></div>
+            <span class="nav-title"><%= appName %></span>
+        </div>
+        <div class="nav-actions">
+            <span class="nav-status">
+                <span class="status-dot"></span>
+                Active session
+            </span>
+            <a href="/logto/sign-out" class="btn-logout">
+                Sign out
+            </a>
+        </div>
+    </nav>
+
+    <main class="dashboard">
+        <header class="dash-header">
+            <div class="avatar">
+                <%= username ? username[0].toUpperCase() : email[0].toUpperCase() %>
+            </div>
+            <div class="dash-welcome">
+                <p class="dash-greeting">Welcome back,</p>
+                <h1 class="dash-name"><%= username || email %></h1>
+            </div>
+        </header>
+
+        <section class="cards">
+            <div class="card">
+                <div class="card-label">User ID</div>
+                <div class="card-value mono"><%= userId %></div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">Email</div>
+                <div class="card-value"><%= email || '—' %></div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">Username</div>
+                <div class="card-value"><%= username || '—' %></div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">Current App</div>
+                <div class="card-value"><%= appName %> <span class="port-tag">:<%= port %></span></div>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>

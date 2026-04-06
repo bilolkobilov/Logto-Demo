@@ -1,0 +1,17 @@
+{
+  "name": "main-app",
+  "version": "1.0.0",
+  "description": "Central auth server",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "@logto/express": "latest",
+    "cookie-parser": "latest",
+    "dotenv": "^16.4.5",
+    "express": "latest",
+    "express-session": "latest",
+    "node-fetch": "^2.7.0"
+  }
+}

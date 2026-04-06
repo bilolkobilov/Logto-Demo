@@ -1,0 +1,15 @@
+{
+  "name": "client-app",
+  "version": "1.0.0",
+  "description": "SSO client applications",
+  "scripts": {
+    "start:one": "node app-one.js",
+    "start:two": "node app-two.js"
+  },
+  "dependencies": {
+    "cookie-parser": "latest",
+    "ejs": "latest",
+    "express": "latest",
+    "express-session": "latest"
+  }
+}

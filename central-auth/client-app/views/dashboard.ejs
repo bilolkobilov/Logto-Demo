@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= appName %> — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    :root {
+      --accent: <%= appColor %>;
+      --accent-dim: <%= appColor %>22;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-dot" style="background: var(--accent)"></div>
+      <span class="nav-title"><%= appName %></span>
+    </div>
+    <div class="nav-actions">
+      <span class="nav-status">
+        <span class="status-dot"></span>
+        Active session
+      </span>
+      <a href="#" class="btn-logout" onclick="handleLogout(event)">
+        Sign out
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="dashboard">
+
+    <!-- Welcome header -->
+    <header class="dash-header">
+      <div class="avatar">
+        <%= user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase() %>
+      </div>
+      <div class="dash-welcome">
+        <p class="dash-greeting">Welcome back,</p>
+        <h1 class="dash-name"><%= user.username || user.email %></h1>
+      </div>
+    </header>
+
+    <!-- Info cards -->
+    <section class="cards">
+
+      <div class="card">
+        <div class="card-label">User ID</div>
+        <div class="card-value mono"><%= user.userId %></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Email</div>
+        <div class="card-value"><%= user.email || '—' %></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Username</div>
+        <div class="card-value"><%= user.username || '—' %></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Current App</div>
+        <div class="card-value"><%= appName %> <span class="port-tag">:<%=port%></span></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    const MAIN_APP_URL = 'http://localhost:3002';
+    const CURRENT_PORT = '<%= port %>';
+    const SESSION_CHECK_COOLDOWN_MS = 4000;
+    let isRedirectingLoggedOut = false;
+    let lastSessionCheckAt = 0;
+    
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // LOGOUT HANDLER - Clear local session first, then trigger Main App logout
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    async function handleLogout(event) {
+      event.preventDefault();
+      
+      console.log('[SSO] Logout initiated - clearing local session...');
+      
+      // Clear local session first
+      try {
+        await fetch('/clear-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('[SSO] Local session cleared');
+      } catch (err) {
+        console.error('[SSO] Failed to clear local session:', err);
+      }
+      
+      // Immediately redirect to login page with logged out message
+      window.location.assign('/?loggedOut=1');
+      
+      // Trigger Main App logout in background (for other apps)
+      fetch(MAIN_APP_URL + '/logout?from=' + CURRENT_PORT, {
+        credentials: 'include',
+        mode: 'no-cors' // Fire and forget
+      }).catch(err => console.error('[SSO] Main App logout failed:', err));
+    }
+
+    function redirectLoggedOutOnce(reason) {
+      if (isRedirectingLoggedOut) return;
+      isRedirectingLoggedOut = true;
+      console.log('[SSO] Redirecting to logged-out page. Reason:', reason);
+      window.location.assign('/?loggedOut=1');
+    }
+
+    async function checkLocalSession(reason) {
+      const now = Date.now();
+      if (now - lastSessionCheckAt < SESSION_CHECK_COOLDOWN_MS) {
+        return;
+      }
+      lastSessionCheckAt = now;
+
+      try {
+        const response = await fetch('/check-session', { cache: 'no-store' });
+
+        if (!response.ok) {
+          throw new Error('Session check failed with ' + response.status);
+        }
+
+        const data = await response.json();
+        console.log('[SSO] Session check (' + reason + '):', data);
+
+        if (!data.isLoggedIn) {
+          redirectLoggedOutOnce(reason);
+        }
+      } catch (err) {
+        console.error('[SSO] Session check failed (' + reason + '):', err);
+      }
+    }
+
+    // Event-driven session checks, no timer loop.
+    checkLocalSession('startup');
+
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        checkLocalSession('tab-visible');
+      }
+    });
+
+    window.addEventListener('focus', function() {
+      checkLocalSession('window-focus');
+    });
+  </script>
+
+</body>
+</html>

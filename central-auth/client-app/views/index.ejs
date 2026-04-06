@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= appName || 'Client App' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <% if (appColor) { %>
+  <style>
+    :root {
+      --accent: <%= appColor %>;
+      --accent-dim: <%= appColor %>22;
+    }
+  </style>
+  <% } %>
+</head>
+<body>
+  <% if (typeof isAuthUnavailable !== 'undefined' && isAuthUnavailable) { %>
+  <div class="loading-screen">
+    <h1 class="dash-name">Authentication is not configured</h1>
+    <p class="loading-text">Set real Logto credentials in the main app before signing in.</p>
+    <a class="sso-link" href="/login">Login <span class="arrow">→</span></a>
+  </div>
+  <% } else if (typeof isLoggedOut !== 'undefined' && isLoggedOut) { %>
+  <div class="loading-screen">
+    <h1 class="dash-name">You are signed out</h1>
+    <p class="loading-text">Your session has been cleared for <%= appName %>.</p>
+    <a class="sso-link" href="/login">Sign in again <span class="arrow">→</span></a>
+  </div>
+  <% } else { %>
+  <div class="loading-screen">
+    <h1 class="dash-name">Welcome to <%= appName %></h1>
+    <p class="loading-text">Sign in to access your dashboard with SSO</p>
+    <a class="sso-link" href="/login">Sign in <span class="arrow">→</span></a>
+  </div>
+  <% } %>
+
+  <script>
+    const MAIN_APP_URL = 'http://localhost:3002';
+    const AUTH_CHECK_COOLDOWN_MS = 4000;
+    let isRedirectingToLogin = false;
+    let lastAuthCheckAt = 0;
+
+    function redirectToLoginOnce(reason) {
+      if (isRedirectingToLogin) return;
+      isRedirectingToLogin = true;
+      console.log('[SSO] Redirecting to login. Reason:', reason);
+      window.location.assign('/login');
+    }
+
+    async function checkCentralAuth(reason) {
+      const now = Date.now();
+      if (now - lastAuthCheckAt < AUTH_CHECK_COOLDOWN_MS) {
+        return;
+      }
+      lastAuthCheckAt = now;
+
+      try {
+        const response = await fetch(MAIN_APP_URL + '/auth-status', {
+          credentials: 'include',
+          mode: 'cors',
+          cache: 'no-store'
+        });
+
+        if (!response.ok) {
+          throw new Error('Auth status request failed with ' + response.status);
+        }
+
+        const data = await response.json();
+        console.log('[SSO] Auth check (' + reason + '):', data);
+
+        if (data.isAuthenticated) {
+          redirectToLoginOnce(reason);
+        }
+      } catch (err) {
+        console.error('[SSO] Auth check failed (' + reason + '):', err);
+      }
+    }
+
+    // Google-style event-driven checks: startup + user-return events, no interval polling.
+    checkCentralAuth('startup');
+
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        checkCentralAuth('tab-visible');
+      }
+    });
+
+    window.addEventListener('focus', function() {
+      checkCentralAuth('window-focus');
+    });
+  </script>
+</body>
+</html>

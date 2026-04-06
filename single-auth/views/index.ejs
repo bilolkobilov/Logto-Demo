@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= appName %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        :root {
+            --accent: <%= appColor %>;
+            --accent-dim: <%= appColor %>22;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen">
+        <h1 class="dash-name">Welcome to <%= appName %></h1>
+
+        <% if (isAuthenticated) { %>
+            <p class="loading-text">You are signed in. Continue to your dashboard.</p>
+            <div class="sso-links">
+                <a class="sso-link" href="/dashboard">Go to dashboard <span class="arrow">→</span></a>
+                <a class="sso-link" href="/logto/sign-out">Sign out <span class="arrow">→</span></a>
+            </div>
+        <% } else { %>
+            <p class="loading-text">Sign in to access your dashboard.</p>
+            <a class="sso-link" href="/logto/sign-in">Sign in <span class="arrow">→</span></a>
+        <% } %>
+    </div>
+</body>
+</html>
